@@ -1,0 +1,89 @@
+﻿@page "/Data/People/Edit/{Id:int}"
+
+@using DataAccessLibrary
+@using DataAccessLibrary.Models
+@using BlazerUICrud.Models
+
+@inject NavigationManager uriHelper
+@inject IJSRuntime js
+@inject IPeopleData _db
+
+<h3>PeopleEdit</h3>
+
+<div class="row">
+
+    <EditForm Model="@newPerson" OnValidSubmit="@UpdatePerson">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        <table class="table table-striped">
+            <tbody>
+                <tr>
+                    <td>FirstName</td>
+                    <td>:</td>
+                    <td><InputText id="firstName" @bind-Value="newPerson.FirstName" /></td>
+                </tr>
+                <tr>
+                    <td>LastName</td>
+                    <td>:</td>
+                    <td><InputText id="lastName" @bind-Value="newPerson.LastName" /></td>
+                </tr>
+                <tr>
+                    <td>EmailAddress</td>
+                    <td>:</td>
+                    <td><InputText id="emailAddress" @bind-Value="newPerson.EmailAddress" /></td>
+                </tr>
+                <tr>
+                    <td><button type="submit" class="btn btn-success">Update Person</button></td>
+                    <td><a href="Data/People" class="btn btn-danger">Back to List</a></td>
+                </tr>
+            </tbody>
+        </table>
+    </EditForm>
+</div>
+
+@code {
+    [Parameter]
+    public int? Id { get; set; }
+
+    private PersonModel person;
+    private DisplayPersonModel newPerson = new DisplayPersonModel();
+
+    protected override async Task OnInitializedAsync()
+    {
+
+        person = await _db.GetPerson(Id ?? default(int));
+
+        newPerson.Id = person.Id;
+        newPerson.FirstName = person.FirstName;
+        newPerson.LastName = person.LastName;
+        newPerson.EmailAddress = person.EmailAddress;
+
+    }
+
+    private async Task UpdatePerson()
+    {
+        if (await js.InvokeAsync<bool>("confirm", $"Do you want to update this record?"))
+        {
+            PersonModel p = new PersonModel
+            {
+                Id = newPerson.Id,
+                FirstName = newPerson.FirstName,
+                LastName = newPerson.LastName,
+                EmailAddress = newPerson.EmailAddress
+            };
+
+            await _db.UpdatePerson(p);
+
+
+            await js.InvokeVoidAsync("alert", $"Update Successfully!");
+            uriHelper.NavigateTo("/Data/People");
+        }
+        else
+        {
+            newPerson.FirstName = person.FirstName;
+            newPerson.LastName = person.LastName;
+            newPerson.EmailAddress = person.EmailAddress;
+        }
+    }
+}

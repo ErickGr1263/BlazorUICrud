@@ -1,0 +1,75 @@
+﻿@page "/Data/People/Add/"
+
+@using DataAccessLibrary
+@using DataAccessLibrary.Models
+@using BlazerUICrud.Models
+
+@inject NavigationManager uriHelper
+@inject IJSRuntime js
+@inject IPeopleData _db
+
+<h3>PeopleAdd</h3>
+
+<div class="row">
+
+    <EditForm Model="@newPerson" OnValidSubmit="@InsertPerson">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        <table class="table table-striped">
+            <tbody>
+                <tr>
+                    <td>FirstName</td>
+                    <td>:</td>
+                    <td><InputText id="firstName" @bind-Value="newPerson.FirstName" /></td>
+                </tr>
+                <tr>
+                    <td>LastName</td>
+                    <td>:</td>
+                    <td><InputText id="lastName" @bind-Value="newPerson.LastName" /></td>
+                </tr>
+                <tr>
+                    <td>EmailAddress</td>
+                    <td>:</td>
+                    <td><InputText id="emailAddress" @bind-Value="newPerson.EmailAddress" /></td>
+                </tr>
+                <tr>
+                    <td><button type="submit" class="btn btn-success">Add Person</button></td>
+                    <td><a href="Data/People" class="btn btn-danger">Back to List</a></td>
+                </tr>
+            </tbody>
+        </table>
+    </EditForm>
+</div>
+
+@code {
+
+    private List<PersonModel> people;
+    private DisplayPersonModel newPerson = new DisplayPersonModel();
+
+    private async Task InsertPerson()
+    {
+        if (await js.InvokeAsync<bool>("confirm", $"Do you want to add this record?"))
+        {
+            PersonModel p = new PersonModel
+            {
+                FirstName = newPerson.FirstName,
+                LastName = newPerson.LastName,
+                EmailAddress = newPerson.EmailAddress
+            };
+
+            await _db.InsertPerson(p);
+
+            people = await _db.GetPeople();
+
+            await js.InvokeVoidAsync("alert", $"Insert Successfully!");
+            uriHelper.NavigateTo("/Data/People");
+        }
+        else
+        {
+            newPerson.FirstName = "";
+            newPerson.LastName = "";
+            newPerson.EmailAddress = "";
+        }
+    }
+}

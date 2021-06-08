@@ -1,0 +1,73 @@
+﻿@page "/Data/People"
+
+@using DataAccessLibrary
+@using DataAccessLibrary.Models
+@using BlazerUICrud.Models
+
+@inject IPeopleData _db
+@inject IJSRuntime js
+
+<h1>People Page</h1>
+<br />
+<a href="Data/People/Add/" class="btn btn-primary">Add Person</a>
+<br />
+<br />
+<h4>Current People </h4>
+
+@if (people is null)
+{
+    <p>Loading...</p>
+}
+else
+{
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>First Name</th>
+                <th>Last Name</th>
+                <th>Email Address</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var person in people)
+            {
+                <tr>
+                    <td>@person.FirstName</td>
+                    <td>@person.LastName</td>
+                    <td>@person.EmailAddress</td>
+                    <td><a href="Data/People/Edit/@person.Id" class="btn btn-info">Edit</a></td>
+                    <td><a @onclick="(() => DeletePerson(person.FirstName, person.LastName, person.Id))" class="btn btn-danger">Delete</a></td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+}
+
+@code {
+    private List<PersonModel> people;
+    private DisplayPersonModel newPerson = new DisplayPersonModel();
+    private DeletePersonModel deletePerson = new DeletePersonModel();
+
+    protected override async Task OnInitializedAsync()
+    {
+        people = await _db.GetPeople();
+    }
+
+    private async Task DeletePerson(string firstname, string lastname, int id)
+    {
+        string fullname = firstname + " " + lastname;
+
+        if (await js.InvokeAsync<bool>("confirm", $"Do you want to delete {fullname} record?"))
+        {
+            PersonModel p = new PersonModel
+            {
+                Id = id
+            };
+
+            await _db.DeletePerson(p);
+
+            people = await _db.GetPeople();
+        }
+    }
+}
